@@ -654,3 +654,36 @@ if ( ! function_exists( 'wp_get_list_item_separator' ) ) :
 		return __( ', ', 'twentytwentyone' );
 	}
 endif;
+
+add_action( 'wp_enqueue_scripts', 'my_theme_enqueue_scripts' );
+function my_theme_enqueue_scripts() {
+	wp_enqueue_script('scripts-js',get_stylesheet_directory_uri().'/assets/js/scripts.js',['jquery'],'',true);
+    wp_localize_script('scripts-js','variables',[
+        'ajax_url' => admin_url('admin-ajax.php'),
+    ]);
+}
+
+add_action('wp_ajax_filter_posts','filter_posts');
+add_action('wp_ajax_nopriv_filter_posts','filter_posts');
+function filter_posts() {
+    $search_term = $_REQUEST['search_term']; // Отримати введений текст з Ajax-запиту
+    $args = array(
+        'post_type' => 'artem_posts',
+        'posts_per_page' => -1,
+        'orderby' => 'title', // Сортування по заголовку
+        'order' => 'ASC', // Сортування у висхідному порядку
+        's' => $search_term, // Додати пошуковий термін до параметрів запиту
+        'fields' => 'ids', // Отримувати лише ідентифікатори постів
+    );
+
+    $movies = new WP_Query($args);
+    if ($movies->have_posts()):
+        while ($movies->have_posts()): $movies->the_post();
+            echo get_the_title() . '<br>'; // Виводити лише назви постів
+        endwhile;
+        wp_reset_postdata();
+    else:
+        echo "Post Not Found";
+    endif;
+    wp_die();
+}
